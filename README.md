@@ -22,7 +22,7 @@ Splits are based on **missions**: pick the ones you want in the settings, and th
 
 ## Installation
 
-1. Download `Cyberpunk2077.asl` and place it somewhere you can remember.
+1. Download [Cyberpunk2077.asl](https://github.com/Z0luu/Cyberpunk-2077-Speedrun-Ressource/releases/download/v1.0/Cyberpunk2077.asl) and place it somewhere you can remember.
 2. In LiveSplit, right click → **Edit Layout…** → **+** → **Control** → **Scriptable Auto Splitter**.
 3. Enter the script's path or click **Browse…** and choose `Cyberpunk2077.asl`.
 5. Open the component settings (double click **Scriptable Auto Splitter**) and check the missions you want to split on.
