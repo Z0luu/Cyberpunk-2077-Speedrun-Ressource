@@ -62,4 +62,4 @@ The script reads the current mission ID from the game's memory. When the mission
 
 ## Credits
 
-- Load detection was by **Meta** and **Radioactive03**.
+- Load detection was made by **Meta** and **Radioactive03**.
