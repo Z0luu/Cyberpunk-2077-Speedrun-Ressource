@@ -9,7 +9,6 @@ Splits are based on **missions**: pick the ones you want in the settings, and th
 - **Pause menu detection** – pauses the Game Time while the pause menu is open (the map, inventory, journal, etc. do not pause it).
 - **Mission splits** – splits when the game moves on to the next mission of the list.
   - Missions are grouped by act in the settings, and every mission has its own checkbox.
-  - The default selection follows the any% route (as of 11/10/2026).
   - Missions that are not in the list are ignored.
 - **Automatic splits creation** – recreates the segments of your LiveSplit layout from the checked missions, so you don't have to add or remove them by hand.
 - **Information labels** – adds text components at the bottom of your layout showing the current objective, the current mission, and whether the game is paused.
@@ -18,7 +17,7 @@ Splits are based on **missions**: pick the ones you want in the settings, and th
 ## Requirements
 
 - Windows and [LiveSplit](https://livesplit.org/downloads/).
-- Cyberpunk 2077 **version 2.31**.
+- Cyberpunk 2077 **version 2.31** or **version 2.01**.
 
 ## Installation
 
@@ -54,10 +53,8 @@ The script reads the current mission ID from the game's memory. When the mission
 
 ## Supported versions
 
-| Game version | Status |
-|---|---|
-| 2.31 | Supported |
-| Other | Not supported: Will be added later|
+- **v2.31**
+- **v2.01**
 
 
 ## Credits
