@@ -5,9 +5,16 @@ state ("Cyberpunk2077","2.31") // pointers for version 2.31
 	byte paused        : 0x03430690, 0x30, 0x0, 0x758;
 }
 
+state ("Cyberpunk2077","2.01") // pointers for version 2.01
+{
+	string50 mission   : 0x046B7F90, 0xB8, 0x100;
+	string50 objective : 0x046B7F90, 0x158, 0x118;
+	byte paused        : 0x03E03BF8, 0x1A8;
+}
+
 startup
 {
-	vars.SupportedVersions = new HashSet<string> { "2.31" }; //list of supported version(s).
+	vars.SupportedVersions = new HashSet<string> { "2.31", "2.01" }; //list of supported version(s).
 	vars.versionWarned = false;
 
 	vars.lastSignature = "";
@@ -172,30 +179,65 @@ startup
 				
 				{ "q204_reborn",                                  "New Dawn Fades",                               "—epilogue",              false },
 
-		// { "—separator_2", "—————————————————————————————————————————————————————",        null, false },
-		// { "—info_2",      "———————————Cyberpunk 2077 - Phantom Liberty Splits——————————", null, false },
-		// { "—separator_3", "—————————————————————————————————————————————————————",        null, false },
+		{ "—separator_2", "—————————————————————————————————————————————————————",        null, false },
+		{ "—info_2",      "———————————Cyberpunk 2077 - Phantom Liberty Splits——————————", null, false },
+		{ "—separator_3", "—————————————————————————————————————————————————————",        null, false },
 
 		// Phantom Liberty DLC
-		// { "—phantom_liberty",                              "Phantom Liberty",                              null,                    true },
+		{ "—phantom_liberty",                          "Phantom Liberty",                          null,                    false },
+
+			{ "q301_crash",                                "Dog Eat Dog",                               "—phantom_liberty",      true  },
+			{ "q301_finding_myers",                        "Hole in the Sky",                           "—phantom_liberty",      true  },
+			{ "q301_q302_rescue_myers",                    "Spider and the Fly",                        "—phantom_liberty",      true  },
+			{ "q302_reed",                                 "Lucretia My Reflection",                    "—phantom_liberty",      true  },
+			{ "q303_baron",                                "The Damned",                                "—phantom_liberty",      true  },
+			{ "q303_hands",                                "Get It Together",                           "—phantom_liberty",      true  },
+			{ "q303_songbird",                             "You Know My Name",                          "—phantom_liberty",      true  },
+			{ "q304_stadium",                              "Birds with Broken Wings",                   "—phantom_liberty",      true  },
+			{ "q304_netrunners",                           "I've Seen That Face Before",                "—phantom_liberty",      true  },
+			{ "q304_deal",                                 "Firestarter",                               "—phantom_liberty",      true  },
+
+			// If you decide to betray Songbird during Firestarter
+			{ "—solomon_reed_path",                        "Betray Songbird",                           "—phantom_liberty",      false },
+
+				{ "q305_prison_convoy",                        "Black Steel In The Hour of Chaos",          "—solomon_reed_path",    true  },
+				{ "q305_bunker",                               "Somewhat Damaged",                          "—solomon_reed_path",    true  },
+				{ "q305_border_crossing",                      "Leave in Silence",                          "—solomon_reed_path",    true  },
+				{ "q305_reed_epilogue",                        "Four Score and Seven",                      "—solomon_reed_path",    true  },
+				{ "q305_postcontent",                          "This Corrosion",                            "—solomon_reed_path",    true  },
+
+			// If you decide to betray Reed during Firestarter
+			{ "—songbird_path",                            "Betray Reed",                               "—phantom_liberty",      true  },
+
+				{ "q306_devils_bargain",                       "The Killing Moon",                          "—songbird_path",        true  },
+
+				// If V surrenders Songbird to Reed
+				{ "—surrend_songbird",                         "Surrend Songbird",                          "—songbird_path",        true  },
+
+					{ "q306_reed_epilogue",                        "Through Pain to Heaven",                    "—surrend_songbird",     true  },
+
+				// If V helps Songbird to escape
+				{ "—help_songbird",                            "Help Songbird",                             "—songbird_path",        false  },
+
+					{ "q306_somi_epilogue",                        "Unfinished Sympathy",                       "—help_songbird",        true },
+					{ "q306_postcontent",                          "From Her to Eternity",                      "—help_songbird",        true },
 
 
 
 
-		{ "—separator_4", "—————————————————————————————————————————————————————",        null, false },
-		{ "—info_3",      "————————————DEBUG INFORMATIONS SETTINGS———————————",           null, false },
-		{ "—separator_5", "—————————————————————————————————————————————————————",        null, false },
+		{ "—separator_4", "—————————————————————————————————————————————————————",          null, false },
+		{ "—info_3",      "————————————DEBUG INFORMATIONS SETTINGS———————————",             null, false },
+		{ "—separator_5", "—————————————————————————————————————————————————————",          null, false },
 
 		{ "—quest_state",   "Current Objective", null, false },
 		{ "—mission_state", "Current Mission",   null, false },
 		{ "—is_paused",      "Is game paused",   null, false },
 
-		{ "—separator_6", "—————————————————————————————————————————————————————",        null, false },
-		{ "—info_4",      "————⚠️WARNING: The setting bellow will recreate your splits————",          null, false },
-		{ "—info_5",      "——————————SAVE YOUR TIMES BEFORE DOING SO——————————",          null, false },
-		{ "—separator_7", "—————————————————————————————————————————————————————",        null, false },
+		{ "—separator_6", "—————————————————————————————————————————————————————",          null, false },
+		{ "—info_4",      "—————WARNING: Save Splits after using the setting bellow——————", null, false },
+		{ "—separator_7", "—————————————————————————————————————————————————————",          null, false },
 
-		{ "—auto_split_name", "Automatically create splits based on the checked missions", null, false},
+		{ "—auto_split_name", "Automatically create splits based on the checked missions",  null, false },
 	};
 
 	/* ================================================================================================================================================================== */
@@ -210,6 +252,7 @@ startup
 	};
 
 	vars.splitted = new HashSet<string>();
+	vars.lastResult = false;
 }
 
 init
@@ -262,6 +305,8 @@ init
 
 update
 {
+	vars.loadingWatcher.Update(game);
+
 	// if enabled, displays the current objective
 	if (settings["—quest_state"]) 
 		vars.SetTextComponent("Cur. Objective", string.IsNullOrEmpty(current.objective) ? "-" : current.objective); 
@@ -305,6 +350,9 @@ update
 
 	if (current.mission != old.mission)
 		print("[CP2077] mission: " + old.mission + " -> " + current.mission);
+	
+	if (vars.loadingWatcher.Current != vars.loadingWatcher.Old)
+		print("[CP2077] loading value: " + vars.loadingWatcher.Old + " -> " + vars.loadingWatcher.Current);
 }
 
 start
@@ -331,11 +379,6 @@ split
 		return false;
 
 	return settings[previous];
-}
-
-reset
-{
-	return current.mission == "generic_sts_quest";
 }
 
 isLoading // pause the timer if the game is loading or the pause menu is open (do not apply to game menu: Map, inventory, etc)
