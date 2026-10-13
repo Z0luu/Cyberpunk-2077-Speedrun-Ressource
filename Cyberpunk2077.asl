@@ -1,23 +1,82 @@
+/*
+
+Load & pause remover and autosplit script for Cyberpunk 2077
+Written by Zoluu. Inspired by Meta and Radioactive03's autosplit.
+
+Only version 2.31 and 2.01 are supported (2.01 is highly recommanded for Phantom Liberty)
+
+Download version 2.01 : 
+1. win+r and type "steam://open/console"
+2. In the Steam Console type "download_depot 1091500 1091501 6970577188312667484" to download the main game
+3. In the Steam Console type "download_depot 2138330 2138330 1990018461669282288" to download the dlc
+4. Navigate to the folder in which you downloaded the depot (by default it should be 'C:\Program Files (x86)\Steam\steamapps\content\')
+5. Drag and drop the content of 'app_2138330\depot_2138330' into 'app_1091500\depot_1091501'
+
+You can either keep it in this folder and you will have 2 versions of Cyberpunk Installed or you can copy the folder into 'C:\Program Files (x86)\Steam\steamapps\common\Cyberpunk 2077' but you will need to play in offline mode, otherwise Steam will ask you to update to most recent patch
+This will download the english version of the game with no other language settings, if you want to change the language go to 'https://steamdb.info/app/1091500/depots/', find the language you want, download and drag & drop to the game folder.
+
+
+If you would like to add support to others patches:
+
+1. Download Cheat Engine(CE for short) and attach cyberpunk to CE
+2. Scan for the respective values you are looking for (example: q000_street_kid for the mission pointer, 1 if you paused the game)
+3. Change the value by changing the current mission or unpausing the game and rescan with the new value
+4. Repeat step 3 until only a few addresses are left
+5. The pointer scan needs the START of the object that contains the value, not the value itself.
+	To find it: right click the address > "Find out what accesses this address" (or "writes to"), then trigger the change in game.
+	Look for an instruction like "mov byte ptr [rcx+758],01"
+	the register (rcx) is the start of the object, the number (758) is the offset of your value inside the object.
+6. Check that you found the right object: add (value address - offset) as "8 Bytes", Hexadecimal.
+	It should look like 00007FF7xxxxxxxx, Note the object address.
+7. Right click the object > "Generate pointermap" and save the file. Keep the object address.
+8. Close the game, start it again, load the same save and find the object again (steps 2 to 6).
+9. Right click the new object > "Pointer scan for this address", with:
+- "Only find paths with a static address" checked
+- "Compare results with other saved pointermap(s)": add your file, and enter the object address you had in the first session, no filter on the final offsets, max level 4 (you can add more level if the scan find no path)
+10. Keep the paths that start with "Cyberpunk2077.exe"+ the shortest first.
+11. Write it in the script: base, then the offsets in the same order as in CE.
+	The last offset is the last offset of the scan + the offset of your value inside the object.
+	Example: path "Cyberpunk2077.exe"+048C6DE0 -> B8 -> 20, value at 0xE0 inside the object:
+	string50 mission : 0x048C6DE0, 0xB8, 0x100; (0x20 + 0xE0 = 0x100)
+12. Pointers change with every game version: add one "state" block per supported version.
+
+Known issue:
+Splits are based on the checked missions in the Scriptable Auto Splitter's settings, since this is an open world and you can choose differents paths to get to an ending...
+...you will need to make a route that can work (dont check streetkid & corpo lifepath at the beginning for example, you can not finish both missions so the split will not work)
+
+*/
+
+
 state ("Cyberpunk2077","2.31") // pointers for version 2.31
 { 
-	string50 mission   : 0x048C6DE0, 0xB8, 0x100;
-	string50 objective : 0x048C6DE0, 0x158, 0x118;
-	byte paused        : 0x03430690, 0x30, 0x0, 0x758;
+	string50 mission       : 0x048C6DE0, 0xB8, 0x100;       // For length < ~20
+	string50 missionLong   : 0x048C6DE0, 0xB8, 0x100, 0x0;  // For length > ~20      Not sure of the exact length, 19 is still considered short
+
+	string50 objective     : 0x048C6DE0, 0x158, 0x118;      // useless for now, will add support later
+	string50 objectiveLong : 0x048C6DE0, 0x158, 0x118, 0x0;
+
+	byte paused            : 0x03430690, 0x30, 0x0, 0x758; // paused = 1;   !paused = 0;
 }
 
 state ("Cyberpunk2077","2.01") // pointers for version 2.01
 {
-	string50 mission   : 0x046B7F90, 0xB8, 0x100;
-	string50 objective : 0x046B7F90, 0x158, 0x118;
-	byte paused        : 0x03E03BF8, 0x1A8;
+	string50 mission       : 0x046B7F90, 0xB8, 0x100;
+	string50 missionLong   : 0x046B7F90, 0xB8, 0x100, 0x0;
+
+	string50 objective     : 0x046B7F90, 0x158, 0x118;
+	string50 objectiveLong : 0x046B7F90, 0x158, 0x118, 0x0;
+
+	byte paused            : 0x03E03BF8, 0x1A8;
 }
 
+// Get called when the script is ready, when you load it in LiveSplit
 startup
 {
 	vars.SupportedVersions = new HashSet<string> { "2.31", "2.01" }; //list of supported version(s).
 	vars.versionWarned = false;
 
 	vars.lastSignature = "";
+
 	vars.previous = null; // last mission that is in the splits dictionary
 
 	vars.TimerStart = (EventHandler)((s, e) => {
@@ -29,14 +88,33 @@ startup
 
 	timer.OnStart += vars.TimerStart;
 
-	refreshRate=30;
-
-	// isPaused == 1, !isPaused == 0
+	// isPaused: curr.paused == 1; !isPaused: curr.paused == 0;
 	vars.isPaused = (Func<dynamic, bool>) ((curr) => {
 		return curr != null && curr.paused == 1;
 	});
+
+	// If a string is a valid mission/objective id (only char, digit or '_')
+	vars.IsValid = (Func<string, bool>)(s => !string.IsNullOrEmpty(s) && s.Length > 3 && s.All(c => char.IsLower(c) || char.IsDigit(c) || c == '_'));
+
+	// Pick the valid mission string between the long and the short one
+	vars.GetMission = (Func<dynamic, string>)(st => {
+		string a = st.mission;
+		string b = st.missionLong;
+		if (vars.IsValid(a)) return a;
+		if (vars.IsValid(b)) return b;
+		return null;
+	});
+
+	// Pick the valid objective string between the long and the short one
+	vars.GetObjective = (Func<dynamic, string>)(st => {
+		string a = st.objective;
+		string b = st.objectiveLong;
+		if (vars.IsValid(a)) return a;
+		if (vars.IsValid(b)) return b;
+		return null;
+	});
 	
-	// Asks user to change to game time if LiveSplit is currently set to Real Time.
+	// Asks user to change to game time if LiveSplit is currently set to Real Time. (by Meta and Radioactive03)
 	if (timer.CurrentTimingMethod == TimingMethod.RealTime)
 	{
 		var timingMessage = MessageBox.Show (
@@ -50,7 +128,7 @@ startup
 		if (timingMessage == DialogResult.Yes) timer.CurrentTimingMethod = TimingMethod.GameTime;
 	}
 
-	// Creates a text component at the bottom of the users LiveSplit layout displaying the current objective, current mission or if the game is paused. 
+	// Creates a text component at the bottom of the users LiveSplit layout displaying the current objective, current mission or if the game is paused. (by Meta and Radioactive03)
 	// To disable a text component you need to uncheck it in the autosplit' settings and remove it in the layout editor by selecting it and clicking the "-" button.
 	vars.SetTextComponent = (Action<string, string>)((id, text) =>
 	{
@@ -70,9 +148,8 @@ startup
 		textSetting.GetType().GetProperty("Text2").SetValue(textSetting, text ?? "");
 	});
 
-	/* ================================================================================================================================================================== */
-	/* ================= MISSIONS NAMES AND AUtO SPLITTER SETTINGS - By default, the choosen splits are the ones used in the any% route as of 11/10/226 ================= */
-	/* ================================================================================================================================================================== */
+	// Contains the missions IDs & names, missions tree for better UI and settings (display mission, objective, paused and autosplit creation)
+	// { "id", "Label", "parent", default_value (checked/unchecked) }
 	dynamic[,] splitSettings = {
 		{ "—separator_0", "—————————————————————————————————————————————————————",        null, false },
 		{ "—info_1",      "————————————Cyberpunk 2077 - Main Game Splits—————————————",   null, false },
@@ -240,21 +317,20 @@ startup
 		{ "—auto_split_name", "Automatically create splits based on the checked missions",  null, false },
 	};
 
-	/* ================================================================================================================================================================== */
-	/* ========================================================== ADDS THE MISSIONS NAMES INTO THE AUTO SPLITTER SETTINGS =============================================== */
-	/* ================================================================================================================================================================== */
 	vars.splits = new Dictionary<string, string>();
+	// adds missions label and settings to the Scriptable Autosplit configuration settings.
 	for ( int index = 0; index < splitSettings.GetLength(0); index++ ) {
 		settings.Add(splitSettings[index, 0], splitSettings[index, 3], splitSettings[index, 1], splitSettings[index, 2]);
 		
+		// starting with '—' means it is not a split and shoul not be added in the splits list.
 		if ( !splitSettings[index, 0].StartsWith("—") )
 			vars.splits[splitSettings[index, 0]] = splitSettings[index, 1];
 	};
 
 	vars.splitted = new HashSet<string>();
-	vars.lastResult = false;
 }
 
+// Get called when you boot up the game
 init
 {
 	string detected = modules.First().FileVersionInfo.ProductVersion;
@@ -288,6 +364,7 @@ init
 		}
 	}
 
+	// Loading detection made by Meta and Radioactive03.
 	vars.loading    = false;
 	vars.LoadingPtr = IntPtr.Zero;
 	var module      = modules.First();
@@ -303,17 +380,18 @@ init
 	vars.loadingWatcher = new MemoryWatcher<int>(vars.LoadingPtr);
 }
 
+// Get called every frame in LiveSplit, you can change the refresh in LS settings
 update
 {
 	vars.loadingWatcher.Update(game);
 
 	// if enabled, displays the current objective
 	if (settings["—quest_state"]) 
-		vars.SetTextComponent("Cur. Objective", string.IsNullOrEmpty(current.objective) ? "-" : current.objective); 
+		vars.SetTextComponent("Cur. Objective", string.IsNullOrEmpty(vars.GetObjective(current)) ? "-" : vars.GetObjective(current)); 
 
 	// if enabled, displays the current mission
 	if (settings["—mission_state"])
-		vars.SetTextComponent("Cur. Mission", string.IsNullOrEmpty(current.mission) ? "-" : current.mission);
+		vars.SetTextComponent("Cur. Mission", string.IsNullOrEmpty(vars.GetMission(current)) ? "-" : vars.GetMission(current));
 
 	// if enabled, displays if the game is paused
 	if (settings["—is_paused"])
@@ -348,21 +426,20 @@ update
 		}
 	}
 
-	if (current.mission != old.mission)
-		print("[CP2077] mission: " + old.mission + " -> " + current.mission);
-	
-	if (vars.loadingWatcher.Current != vars.loadingWatcher.Old)
-		print("[CP2077] loading value: " + vars.loadingWatcher.Old + " -> " + vars.loadingWatcher.Current);
+	// if (current.mission != old.mission) print("[CP2077] mission: " + vars.GetMission(old) + " -> " + vars.GetMission(current));
 }
 
+// start the timer when the mission go from "generic_sts_quest" to anything else
 start
 {
-	return (old.mission == "generic_sts_quest" && current.mission != old.mission);
+	return (vars.GetMission(old) == "generic_sts_quest" && vars.GetMission(current) != vars.GetMission(old));
 }
 
+// split the timer if the mission has changed and both previous and current mission are in the splits Dictionary
+// a previous mission is registered only if it is in the splits Dicctionary
 split
 {
-	string m = current.mission;
+	string m = vars.GetMission(current);
 
 	if ( string.IsNullOrEmpty(m) || !vars.splits.ContainsKey(m) )
 		return false;
@@ -375,13 +452,15 @@ split
 	if ( previous == null )
 		return false;
 
+	// to prevent multiple splits on the same mission, for exemple if you die or reload a save file
 	if ( !vars.splitted.Add(previous) )
 		return false;
 
 	return settings[previous];
 }
 
-isLoading // pause the timer if the game is loading or the pause menu is open (do not apply to game menu: Map, inventory, etc)
+// pause the timer if the game is loading or the pause menu is open (do not apply to game menu: Map, inventory, etc)
+isLoading
 {
 	bool loading = (vars.loadingWatcher.Current >= 6 && vars.loadingWatcher.Current % 4 == 2);
 
