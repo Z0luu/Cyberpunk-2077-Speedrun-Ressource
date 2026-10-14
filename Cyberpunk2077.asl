@@ -39,11 +39,6 @@ If you would like to add support to others patches:
 	Example: path "Cyberpunk2077.exe"+048C6DE0 -> B8 -> 20, value at 0xE0 inside the object:
 	string50 mission : 0x048C6DE0, 0xB8, 0x100; (0x20 + 0xE0 = 0x100)
 12. Pointers change with every game version: add one "state" block per supported version.
-
-Known issue:
-Splits are based on the checked missions in the Scriptable Auto Splitter's settings, since this is an open world and you can choose differents paths to get to an ending...
-...you will need to make a route that can work (dont check streetkid & corpo lifepath at the beginning for example, you can not finish both missions so the split will not work)
-
 */
 
 
@@ -184,27 +179,19 @@ startup
 			{ "—act_2",                                        "Act 2",                                        "—main_game",             true  },
 
 				{ "q101_resurrection",                            "Playing for Time",                             "—act_2",                 true  },
-				{ "sq032_tapeworm",                               "Tapeworm",                                     "—act_2",                 false },
+
+				{ "—evelyn_parker_path",                           "Evelyn Parker",                                "—act_2",                 true  },
+
+					{ "q105_dollhouse",                               "Automatic Love",                               "—evelyn_parker_path",    true  },
+					{ "q105_02_jigjig",                               "The Space in Between",                         "—evelyn_parker_path",    true  },
+					{ "q105_03_braindance_studio",                    "Disasterpiece",                                "—evelyn_parker_path",    true  },
+					{ "q105_04_judys",                                "Double Life",                                  "—evelyn_parker_path",    true  },
 				
-				{ "—anders_hellman_path",                          "Anders Hellman",                               "—act_2",                 false },
+				{ "—anders_hellman_path",                          "Anders Hellman",                               "—act_2",                 true  },
 
 					{ "q103_warhead",                                 "Ghost Town",                                   "—anders_hellman_path",   true  },
 					{ "q104_01_sabotage",                             "Lightning Breaks",                             "—anders_hellman_path",   true  },
 					{ "q104_02_av_chase",                             "Life During Wartime",                          "—anders_hellman_path",   true  },
-				
-				{ "—evelyn_parker_path",                           "Evelyn Parker",                                "—act_2",                 true  },
-
-					{ "q105_dollhouse",                               "Automatic Love",                               "—evelyn_parker_path",    true  },
-					{ "q105_02_jigjig",                               "The Space in Between",                         "—evelyn_parker_path",    false },
-					{ "q105_03_braindance_studio",                    "Disasterpiece",                                "—evelyn_parker_path",    false },
-					{ "q105_04_judys",                                "Double Life",                                  "—evelyn_parker_path",    false },
-				
-				{ "—alt_cunningham_path",                          "Alt Cunningham",                               "—act_2",                 false },
-
-					{ "q110_01_voodoo_boys",                          "M'ap Tann Pèlen",                              "—alt_cunningham_path",   true  },
-					{ "q110_voodoo",                                  "I Walk the Line",                              "—alt_cunningham_path",   true  },
-					{ "q110_03_cyberspace",                           "Transmission",                                 "—alt_cunningham_path",   true  },
-					{ "q108_johnny",                                  "Never Fade Away",                              "—alt_cunningham_path",   true  },
 				
 				{ "—goro_takemura_path",                           "Goro Takemura",                                "—act_2",                 true  },
 
@@ -212,36 +199,45 @@ startup
 					{ "q112_02_industrial_park",                      "Gimme Danger",                                 "—goro_takemura_path",    true  },
 					{ "q112_03_dashi_parade",                         "Play It Safe",                                 "—goro_takemura_path",    true  },
 					{ "q112_04_hideout",                              "Search and Destroy",                           "—goro_takemura_path",    true  },
+
+				{ "—alt_cunningham_path",                          "Alt Cunningham",                               "—act_2",                 true  },
+
+					{ "q110_01_voodoo_boys",                          "M'ap Tann Pèlen",                              "—alt_cunningham_path",   true  },
+					{ "q110_voodoo",                                  "I Walk the Line",                              "—alt_cunningham_path",   true  },
+					{ "q110_03_cyberspace",                           "Transmission",                                 "—alt_cunningham_path",   true  },
+					{ "q108_johnny",                                  "Never Fade Away",                              "—alt_cunningham_path",   true  },
+				
+				{ "sq032_tapeworm",                               "Tapeworm",                                     "—act_2",                 true  },
 				
 			// Act 3 - Point of no return
 			{ "—act_3",                                        "Act 3",                              "—main_game",             true  },
 
-				{ "02_sickness",                                  "Nocturne Op55N1",                              "—act_3",                 true  },
+				{ "02_sickness",                                  "Nocturne Op55N1",                              "—act_3",                true  },
 
-				{ "—arasaka_ending",                               "Arasaka",                                      "—act_3",                 false },
+				{ "—arasaka_ending",                              "Arasaka",                                      "—act_3",                false },
 
-					{ "—hanako_ending",                                "Hanako Arasaka",                               "—arasaka_ending",        false },
+					{ "—hanako_ending",                               "Hanako Arasaka",                               "—arasaka_ending",       false },
 
-						{ "q113_rescuing_hanako",                         "Last Caress",                                  "—hanako_ending",         true  },
-						{ "q113_corpo",                                   "Totalimmortal",                                "—hanako_ending",         true  },
+						{ "q113_rescuing_hanako",                         "Last Caress",                                  "—hanako_ending",        true  },
+						{ "q113_corpo",                                   "Totalimmortal",                                "—hanako_ending",        true  },
 				
-				{ "—mikoshi_ending",                               "Mikoshi",                                      "—act_3",                 true  },
+				{ "—mikoshi_ending",                               "Mikoshi",                                      "—act_3",                false },
 
-					{ "—panam_ending",                                 "Aldecaldos",                                   "—mikoshi_ending",        false },
+					{ "—panam_ending",                                "Aldecaldos",                                   "—mikoshi_ending",       false },
 
-						{ "q114_01_nomad_initiation",                     "We Gotta Live Together",                       "—panam_ending",          true  },
-						{ "q114_02_maglev_line_assault",                  "Forward to Death",                             "—panam_ending",          true  },
-						{ "q114_03_attack_on_arasaka_tower",              "Belly of the Beast",                           "—panam_ending",          true  },
+						{ "q114_01_nomad_initiation",                     "We Gotta Live Together",                       "—panam_ending",         true  },
+						{ "q114_02_maglev_line_assault",                  "Forward to Death",                             "—panam_ending",         true  },
+						{ "q114_03_attack_on_arasaka_tower",              "Belly of the Beast",                           "—panam_ending",         true  },
 						
 					
-					{ "—rogue_ending",                                 "The Afterlife",                                "—mikoshi_ending",        false },
+					{ "—rogue_ending",                                "The Afterlife",                                "—mikoshi_ending",        false },
 
-						{ "q115_afterlife",                               "For Whom the Bell Tolls",                      "—rogue_ending", true },
-						{ "q115_rogues_last_flight",                      "Knockin' on Heaven's Door",                    "—rogue_ending", true },
+						{ "q115_afterlife",                               "For Whom the Bell Tolls",                      "—rogue_ending",         true  },
+						{ "q115_rogues_last_flight",                      "Knockin' on Heaven's Door",                    "—rogue_ending",         true  },
 
-					{ "—jhonny_ending",                                "Secret Ending",                                "—mikoshi_ending",        false },
+					{ "—jhonny_ending",                               "Secret Ending",                                "—mikoshi_ending",       false },
 
-						{ "09_solo",                                      "(Don't Fear) The Reaper",                      "—jhonny_ending", true },
+						{ "09_solo",                                      "(Don't Fear) The Reaper",                      "—jhonny_ending",        true  },
 
 				{ "q116_cyberspace",                              "Changes",                                      "—act_3",                 false },
 			
@@ -289,7 +285,7 @@ startup
 				{ "q306_devils_bargain",                       "The Killing Moon",                          "—songbird_path",        true  },
 
 				// If V surrenders Songbird to Reed
-				{ "—surrend_songbird",                         "Surrend Songbird",                          "—songbird_path",        true  },
+				{ "—surrend_songbird",                         "Surrend Songbird",                          "—songbird_path",        false },
 
 					{ "q306_reed_epilogue",                        "Through Pain to Heaven",                    "—surrend_songbird",     true  },
 
