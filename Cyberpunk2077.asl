@@ -313,14 +313,14 @@ startup
 		{ "—auto_split_name", "Automatically create splits based on the checked missions",  null, false },
 	};
 
-	vars.splits = new Dictionary<string, string>();
+	vars.splits = new Dictionary<string, (string label, int index)>();
 	// adds missions label and settings to the Scriptable Autosplit configuration settings.
 	for ( int index = 0; index < splitSettings.GetLength(0); index++ ) {
 		settings.Add(splitSettings[index, 0], splitSettings[index, 3], splitSettings[index, 1], splitSettings[index, 2]);
 		
 		// starting with '—' means it is not a split and shoul not be added in the splits list.
 		if ( !splitSettings[index, 0].StartsWith("—") )
-			vars.splits[splitSettings[index, 0]] = splitSettings[index, 1];
+			vars.splits[splitSettings[index, 0]] = (splitSettings[index, 1], index);
 	};
 
 	vars.splitted = new HashSet<string>();
@@ -398,11 +398,11 @@ update
 	{
 		var splits_names = new List<string>();
 
-		foreach (var entry in (Dictionary<string, string>)vars.splits)
+		foreach (var entry in (Dictionary<string, (string label, int index)>)vars.splits)
 		{
 			// add only if the segment is checked in settings
 			if (settings[entry.Key])
-				splits_names.Add(entry.Value);
+				splits_names.Add(entry.Value.label);
 		}
 
 		// check if the selected splits are different
@@ -431,8 +431,8 @@ start
 	return (vars.GetMission(old) == "generic_sts_quest" && vars.GetMission(current) != vars.GetMission(old));
 }
 
-// split the timer if the mission has changed and both previous and current mission are in the splits Dictionary
-// a previous mission is registered only if it is in the splits Dicctionary
+// split the timer if the mission has changed, both previous and current mission are in the splits Dictionary and the current mission is lower in the tree than the previous one.
+// a previous mission is registered only if it is in the splits Dictionary
 split
 {
 	string m = vars.GetMission(current);
@@ -451,6 +451,10 @@ split
 	// to prevent multiple splits on the same mission, for exemple if you die or reload a save file
 	if ( !vars.splitted.Add(previous) )
 		return false;
+
+	// splits only if a mission is lower in the tree
+	if (vars.splits[m].index <= vars.splits[previous].index)
+    	return false;
 
 	return settings[previous];
 }
