@@ -76,7 +76,6 @@ startup
 
 	vars.TimerStart = (EventHandler)((s, e) => {
 		timer.IsGameTimePaused = true;
-		vars.splitIndex = 0;
 		vars.splitted.Clear();
 		vars.previous = null;
 	});
@@ -175,7 +174,7 @@ startup
 
 				{ "q101_01_firestorm",                            "Love Like Fire",                               "—interlude",             true  },
 			
-			// Act 2 - From when V wake up in the junkyard to when V has to meet Hanako at the Embers
+			// Act 2 - From when V wakes up in the junkyard to when V has to meet Hanako at the Embers
 			{ "—act_2",                                        "Act 2",                                        "—main_game",             true  },
 
 				{ "q101_resurrection",                            "Playing for Time",                             "—act_2",                 true  },
@@ -204,8 +203,8 @@ startup
 
 					{ "q110_01_voodoo_boys",                          "M'ap Tann Pèlen",                              "—alt_cunningham_path",   true  },
 					{ "q110_voodoo",                                  "I Walk the Line",                              "—alt_cunningham_path",   true  },
-					{ "q110_03_cyberspace",                           "Transmission",                                 "—alt_cunningham_path",   true  },
 					{ "q108_johnny",                                  "Never Fade Away",                              "—alt_cunningham_path",   true  },
+					{ "q110_03_cyberspace",                           "Transmission",                                 "—alt_cunningham_path",   true  },
 				
 				{ "sq032_tapeworm",                               "Tapeworm",                                     "—act_2",                 true  },
 				
@@ -313,17 +312,29 @@ startup
 		{ "—auto_split_name", "Automatically create splits based on the checked missions",  null, false },
 	};
 
-	vars.splits = new Dictionary<string, (string label, int index)>();
+	var splits = new Dictionary<string, Tuple<string, int>>();
+	var order  = new List<string>();     // mission IDs in table order
+
 	// adds missions label and settings to the Scriptable Autosplit configuration settings.
 	for ( int index = 0; index < splitSettings.GetLength(0); index++ ) {
-		settings.Add(splitSettings[index, 0], splitSettings[index, 3], splitSettings[index, 1], splitSettings[index, 2]);
-		
-		// starting with '—' means it is not a split and shoul not be added in the splits list.
-		if ( !splitSettings[index, 0].StartsWith("—") )
-			vars.splits[splitSettings[index, 0]] = (splitSettings[index, 1], index);
+		string id    = splitSettings[index, 0];
+		string label = splitSettings[index, 1];
+
+		settings.Add(id, splitSettings[index, 3], label, splitSettings[index, 2]);
+
+		// starting with '—' means it is not a split and should not be added in the splits list.
+		if ( !id.StartsWith("—") )
+		{
+			splits[id] = Tuple.Create(label, index);
+			order.Add(id);
+		}
 	};
 
-	vars.splitted = new HashSet<string>();
+	vars.splits      = splits;
+	vars.order       = order;
+	vars.NextOnly    = true;    // only the next checked mission of the table is accepted
+	vars.StrictOrder = true;    // used when NextOnly is false: only a move forward in the table is accepted
+	vars.splitted    = new HashSet<string>();
 }
 
 // Get called when you boot up the game
@@ -396,13 +407,14 @@ update
 	// Automatically update the splits layout. The game needs to be open and timer not running
 	if (settings["—auto_split_name"] && timer.CurrentPhase == TimerPhase.NotRunning && vars.splits.Count > 0)
 	{
+		var missions = (Dictionary<string, Tuple<string, int>>)vars.splits;
 		var splits_names = new List<string>();
 
-		foreach (var entry in (Dictionary<string, (string label, int index)>)vars.splits)
+		foreach (var entry in missions.OrderBy(e => e.Value.Item2))
 		{
 			// add only if the segment is checked in settings
 			if (settings[entry.Key])
-				splits_names.Add(entry.Value.label);
+				splits_names.Add(entry.Value.Item1);
 		}
 
 		// check if the selected splits are different
@@ -437,24 +449,39 @@ split
 {
 	string m = vars.GetMission(current);
 
-	if ( string.IsNullOrEmpty(m) || !vars.splits.ContainsKey(m) )
+	var missions = (Dictionary<string, Tuple<string, int>>)vars.splits;
+
+	if ( string.IsNullOrEmpty(m) || !missions.ContainsKey(m) )
 		return false;
 
 	string previous = vars.previous;
 	if ( m == previous )
 		return false;
 
+	if ( previous != null )
+	{
+		if ( vars.NextOnly )
+		{
+			// the next checked mission after "previous", in table order
+			string expected = null;
+			bool after = false;
+			foreach ( string id in (List<string>)vars.order )
+			{
+				if ( id == previous ) { after = true; continue; }
+				if ( after && settings[id] ) { expected = id; break; }
+			}
+			if ( m != expected )
+				return false;
+		}
+		else if ( vars.StrictOrder && missions[m].Item2 <= missions[previous].Item2 )
+			return false;
+	}
+
 	vars.previous = m;
-	if ( previous == null )
-		return false;
 
 	// to prevent multiple splits on the same mission, for exemple if you die or reload a save file
 	if ( !vars.splitted.Add(previous) )
 		return false;
-
-	// splits only if a mission is lower in the tree
-	if (vars.splits[m].index <= vars.splits[previous].index)
-    	return false;
 
 	return settings[previous];
 }
