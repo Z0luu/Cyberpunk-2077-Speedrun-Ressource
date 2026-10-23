@@ -41,16 +41,27 @@ If you would like to add support to others patches:
 12. Pointers change with every game version: add one "state" block per supported version.
 */
 
+state ("Cyberpunk2077","2.5") // pointers for version 2.5
+{ 
+	string50 mission       : 0x051908F0, 0xB8, 0x100;
+	string50 missionLong   : 0x051908F0, 0xB8, 0x100, 0x0;
+
+	string50 objective     : 0x051908F0, 0xB8, 0x120;
+	string50 objectiveLong : 0x051908F0, 0xB8, 0x120, 0x0;
+
+	byte paused            : 0x05053EC0, 0x210;
+	byte loading           : 0x3BF6E58;
+}
 
 state ("Cyberpunk2077","2.31") // pointers for version 2.31
 { 
-	string50 mission       : 0x048C6DE0, 0xB8, 0x100;       // For length < ~20
-	string50 missionLong   : 0x048C6DE0, 0xB8, 0x100, 0x0;  // For length > ~20      Not sure of the exact length, 19 is still considered short
+	string50 mission       : 0x048C6DE0, 0xB8, 0x100;
+	string50 missionLong   : 0x048C6DE0, 0xB8, 0x100, 0x0;
 
-	string50 objective     : 0x048C6DE0, 0x158, 0x118;      // useless for now, will add support later
+	string50 objective     : 0x048C6DE0, 0x158, 0x118;
 	string50 objectiveLong : 0x048C6DE0, 0x158, 0x118, 0x0;
 
-	byte paused            : 0x03430690, 0x30, 0x0, 0x758; // paused = 1;   !paused = 0;
+	byte paused            : 0x03430690, 0x30, 0x0, 0x758;
 }
 
 state ("Cyberpunk2077","2.01") // pointers for version 2.01
@@ -67,7 +78,7 @@ state ("Cyberpunk2077","2.01") // pointers for version 2.01
 // Get called when the script is ready, when you load it in LiveSplit
 startup
 {
-	vars.SupportedVersions = new HashSet<string> { "2.31", "2.01" }; //list of supported version(s).
+	vars.SupportedVersions = new HashSet<string> { "2.5", "2.31", "2.01" }; //list of supported version(s).
 	vars.versionWarned = false;
 
 	vars.lastSignature = "";
@@ -85,6 +96,13 @@ startup
 	// isPaused: curr.paused == 1; !isPaused: curr.paused == 0;
 	vars.isPaused = (Func<dynamic, bool>) ((curr) => {
 		return curr != null && curr.paused == 1;
+	});
+
+	vars.GetLoadingValue = (Func<dynamic, int>)(st => vars.version == 2.5 ? (int)st.loading : (int)vars.loadingWatcher.Current);
+
+	vars.IsLoading = (Func<dynamic, bool>)(st => {
+		int lv = vars.GetLoadingValue(st);
+		return lv >= 6 && lv % 4 == 2;
 	});
 
 	// If a string is a valid mission/objective id (only char, digit or '_')
@@ -172,7 +190,9 @@ startup
 			// Interlude - Jhonny Silverhand's assault on the Arasaka Tower
 			{ "—interlude",                                    "Interlude (Jhonny Silverhand)",                "—main_game",             true  },
 
-				{ "q101_01_firestorm",                            "Love Like Fire",                               "—interlude",             true  },
+				//{ "q101_01_firestorm",                            "Love Like Fire",                               "—interlude",             true  },
+				// the mission id for Love Like Fire is q101_01_firestorm but sq_q001_wakako get detected first after The Heist.
+				{ "sq_q001_wakako",                            "Love Like Fire",                               "—interlude",             true  },
 			
 			// Act 2 - From when V wakes up in the junkyard to when V has to meet Hanako at the Embers
 			{ "—act_2",                                        "Act 2",                                        "—main_game",             true  },
@@ -303,7 +323,8 @@ startup
 
 		{ "—quest_state",   "Current Objective", null, false },
 		{ "—mission_state", "Current Mission",   null, false },
-		{ "—is_paused",      "Is game paused",   null, false },
+		{ "—is_paused",     "Is game paused",    null, false },
+		{ "—is_loading",    "Is game loading",   null, false },
 
 		{ "—separator_6", "—————————————————————————————————————————————————————",          null, false },
 		{ "—info_4",      "—————WARNING: Save Splits after using the setting bellow——————", null, false },
@@ -343,6 +364,11 @@ init
 	string detected = modules.First().FileVersionInfo.ProductVersion;
 	version = detected;
 
+	double ver;
+	if (!double.TryParse(detected, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out ver))
+		ver = 0;
+	vars.version = ver;
+
 	// Show a Message Box if the game's version detected is not supported by the autosplitter
 	var supported = (HashSet<string>)vars.SupportedVersions;
 	if (!supported.Contains(detected) && !vars.versionWarned)
@@ -381,8 +407,8 @@ init
 		OnFound = (process, scanners, addr) => addr + 0x4 + process.ReadValue<int>(addr)
 	});
 
-	if (vars.LoadingPtr == IntPtr.Zero)
-		throw new Exception("Game engine not initialized - retrying");
+	// if (vars.LoadingPtr == IntPtr.Zero)
+		// throw new Exception("Game engine not initialized - retrying");
 
 	vars.loadingWatcher = new MemoryWatcher<int>(vars.LoadingPtr);
 }
@@ -403,6 +429,10 @@ update
 	// if enabled, displays if the game is paused
 	if (settings["—is_paused"])
 		vars.SetTextComponent("Is paused", current.paused == 1 ? "Yes" : "No");
+
+	// if enabled, displays if the game is loading
+	if (settings["—is_loading"])
+		vars.SetTextComponent("Is loading", vars.IsLoading(current) ? "Yes" : "No");
 
 	// Automatically update the splits layout. The game needs to be open and timer not running
 	if (settings["—auto_split_name"] && timer.CurrentPhase == TimerPhase.NotRunning && vars.splits.Count > 0)
@@ -434,7 +464,7 @@ update
 		}
 	}
 
-	// if (current.mission != old.mission) print("[CP2077] mission: " + vars.GetMission(old) + " -> " + vars.GetMission(current));
+	if (current.mission != old.mission) print("[CP2077] mission: " + vars.GetMission(old) + " -> " + vars.GetMission(current));
 }
 
 // start the timer when the mission go from "generic_sts_quest" to anything else
@@ -489,9 +519,7 @@ split
 // pause the timer if the game is loading or the pause menu is open (do not apply to game menu: Map, inventory, etc)
 isLoading
 {
-	bool loading = (vars.loadingWatcher.Current >= 6 && vars.loadingWatcher.Current % 4 == 2);
-
-	return loading || vars.isPaused(current);
+	return vars.IsLoading(current) || vars.isPaused(current);
 }
 
 exit

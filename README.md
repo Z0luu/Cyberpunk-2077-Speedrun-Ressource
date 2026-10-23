@@ -17,7 +17,7 @@ Splits are based on **missions**: pick the ones you want in the settings, and th
 ## Requirements
 
 - Windows and [LiveSplit](https://livesplit.org/downloads/).
-- Cyberpunk 2077 **version 2.31** or **version 2.01**.
+- Cyberpunk 2077 **version 2.31**, **version 2.01** or **v2.5**.
 
 ## Installation
 
@@ -53,8 +53,10 @@ The script reads the current mission ID from the game's memory. When the mission
 
 ## Supported versions
 
+- **v2.5**
 - **v2.31**
 - **v2.01**
+
 
 
 ## Credits
