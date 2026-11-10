@@ -281,6 +281,9 @@ startup
 			{ "q301_crash",                                "Dog Eat Dog",                               "—phantom_liberty",      true  },
 			{ "q301_finding_myers",                        "Hole in the Sky",                           "—phantom_liberty",      true  },
 			{ "q301_q302_rescue_myers",                    "Spider and the Fly",                        "—phantom_liberty",      true  },
+			{ "sts_ep1_10",                                "Waiting for Dodger",                        "—phantom_liberty",      true  },
+			{ "sts_ep1_12",                                "Treating Symptoms",                         "—phantom_liberty",      true  },
+			{ "sts_ep1_01",                                "Dogtown Saints",                            "—phantom_liberty",      true  },
 			{ "q302_reed",                                 "Lucretia My Reflection",                    "—phantom_liberty",      true  },
 			{ "q303_baron",                                "The Damned",                                "—phantom_liberty",      true  },
 			{ "q303_hands",                                "Get It Together",                           "—phantom_liberty",      true  },
@@ -398,25 +401,30 @@ init
 	}
 
 	// Loading detection made by Meta and Radioactive03.
-	vars.loading    = false;
-	vars.LoadingPtr = IntPtr.Zero;
-	var module      = modules.First();
-	var scanner     = new SignatureScanner(game, module.BaseAddress, module.ModuleMemorySize);
+	if(vars.version != 2.5)
+	{
+		
+		vars.loading    = false;
+		vars.LoadingPtr = IntPtr.Zero;
+		var module      = modules.First();
+		var scanner     = new SignatureScanner(game, module.BaseAddress, module.ModuleMemorySize);
 
-	vars.LoadingPtr = scanner.Scan(new SigScanTarget(2, "89??????????F0????????????????48FF??33??4889??????????E8????????4584") { 
-		OnFound = (process, scanners, addr) => addr + 0x4 + process.ReadValue<int>(addr)
-	});
+		vars.LoadingPtr = scanner.Scan(new SigScanTarget(2, "89??????????F0????????????????48FF??33??4889??????????E8????????4584") { 
+			OnFound = (process, scanners, addr) => addr + 0x4 + process.ReadValue<int>(addr)
+		});
 
-	// if (vars.LoadingPtr == IntPtr.Zero)
-		// throw new Exception("Game engine not initialized - retrying");
+		if (vars.LoadingPtr == IntPtr.Zero)
+			throw new Exception("Game engine not initialized - retrying");
 
-	vars.loadingWatcher = new MemoryWatcher<int>(vars.LoadingPtr);
+		vars.loadingWatcher = new MemoryWatcher<int>(vars.LoadingPtr);
+	}
 }
 
-// Get called every frame in LiveSplit, you can change the refresh in LS settings
+// Get called every frame in LiveSplit, you can change the refresh rate in LS settings
 update
 {
-	vars.loadingWatcher.Update(game);
+	if(vars.version != 2.5)
+		vars.loadingWatcher.Update(game);
 
 	// if enabled, displays the current objective
 	if (settings["—quest_state"]) 
