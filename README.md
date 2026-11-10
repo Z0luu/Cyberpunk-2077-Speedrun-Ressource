@@ -17,7 +17,7 @@ Splits are based on **missions**: pick the ones you want in the settings, and th
 ## Requirements
 
 - Windows and [LiveSplit](https://livesplit.org/downloads/).
-- Cyberpunk 2077 **version 2.31**, **version 2.01** or **v2.5**.
+- Cyberpunk 2077 **version 2.5**, **2.31** or **v2.01**.
 
 ## Installation
 
@@ -34,14 +34,10 @@ Splits are based on **missions**: pick the ones you want in the settings, and th
 | Current Objective | Shows the current objective in the layout. |
 | Current Mission | Shows the current mission in the layout. |
 | Is game paused | Shows whether the pause menu is open. |
+| Is game loading | Shows whether the game is loading. |
 | Automatically create splits based on the checked missions | Recreates your LiveSplit segments from the checked missions. |
 
 To remove an information label, uncheck it in the settings and delete the matching component in the layout editor (select it and click **−**).
-
-### ⚠️ Automatic splits creation
-
-This option **replaces the segments of the loaded splits file**, including names and times. **Save your splits first.**
-It only runs while the game is open and the timer is stopped. Once your segments are set, uncheck the option and save your splits file.
 
 ## How splitting works
 
